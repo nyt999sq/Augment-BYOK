@@ -1,0 +1,223 @@
+    他们不同的文件只有这些
+    Augment/extension/out/extension.js
+    Augment/extension/icon-purple.png
+    Augment/extension/icon.png
+    Augment/extension/package.json
+    Augment/[Content_Types].xml
+    Augment/extension.vsixmanifest
+    Bugment/extension/common-webviews/custom-panel.html
+    Bugment/extension/out/custom-panel.html
+    Bugment/extension/out/extension.js
+    Bugment/extension/icon.png
+    Bugment/extension/package.json
+    Bugment/[Content_Types].xml
+    Bugment/extension.vsixmanifest
+    Augment/extension/out/extension.js.map
+
+  项目与现状
+
+  - 工作区：/home/ank/Project/Fork/Augment
+  - 三套扩展/目录：
+      - Augment/：官方版本
+      - Bugment/：改版（已证明“可自定义 provider/baseUrl/apiKey”（未求证，接口不是标准的），并带 autoAuth；但含“VIP/授权”相关）
+      - Cugment/：你现在要做的新改版（目标是“接入自定义 API 但保留全部插件能力”，并按截图重做 UI）
+  - 你当前最想要的是local-adapter（方案 B）：只让 Chat 走本地/自定义（OpenAI/Anthropic/Google/兼容接口），其余能力仍走官方 ACE，避免破坏工具/索引/面板初始化等，但实际无法调用工具。
+
+  你遇到的关键问题（按时间线）
+
+      1. Chat 面板空白（当你把 augment.advanced.chat.url 指向本地服务时）
+      - 真实原因：Augment 的 chat webview 初始化不仅请求 /chat-stream，还会请求很多“挂在同一个 chat.url 下”的端点（例如你日志里的 /agents/list-remote-tools）。
+      - 如果本地服务只实现 chat，而不把这些端点反代回官方 ACE，前端初始化就会失败 → 页面空白。
+      2. 能显示界面但发送 502/503
+      - 这是本地服务转发到你配置的 OpenAI/聚合服务时返回的上游错误（你日志里是“模型 gpt-5-1 无可用渠道”）。
+      - 本质不是 UI bug，而是“模型/渠道/Key/分组”不可用。
+      3. 现在能聊天但无法调用工具
+      - 根因：你当前的 local-adapter 只做了“把用户消息→LLM→流式 text 回传”，没有实现 tool-calling 协议桥接。
+      - 在 Augment 里，“工具是否被调用”不是扩展自己决定的，而是由模型在 chat-stream 的响应里输出 tool_use 结点来触发；扩展收到tool_use 后才会执行工具并回传 tool_result_node，然后继续下一轮。
+      - 你的本地适配器目前不会：
+          - 把 tool_definitions 映射成 OpenAI/Anthropic/Google 的 tools/functions 结构；
+          - 从模型响应解析 tool calls；
+          - 按 Augment 期望的 nodes（包含 tool_use）回传；
+          - 接收下一次请求里的 tool_result_node 并把它变成模型可理解的 tool result，再继续生成最终回答。
+      - 所以结果是：聊天文本 OK，但永远进不了“工具循环”。
+
+  官方 Augment、Bugment、Cugment 三者在“自定义 API”上的本质差异
+
+  - 官方 Augment 代码里确实存在 third_party_override 字段拼装（扩展会把 augment.advanced.chat.override.
+    {baseUrl,apiKey,providerModelName} 塞到请求 payload 的 third_party_override）。
+  - 但你已经确认：官方后端 ACE 实际并不支持/不开放这个 override（至少你用的官方后端不支持），所以“扩展把字段发出去”≠“真的能代你调
+    用 OpenAI/Anthropic/Google”。
+  - Bugment 的可行点不是 “让官方后端代调”，而是 本地拦截并重定向 /chat-stream 到你自己的服务（并且改写 model/provider/header
+    等）；这才解释了为什么 Bugment 能绕开官方后端限制。
+  - 重要边界：Bugment 里若存在“VIP/独家授权/解锁”之类 gating，我这边不会协助做绕过；可做的是用你自有 Key 的 BYOK 方案，走你本地服
+    务或你自己的 API 代理。
+
+  方案 B 的正确架构（你真正需要的那个）
+
+  - VS Code 扩展仍然是 Augment（保留：
+      - 工具宿主（本地 shell、MCP、部分远程工具）
+      - 索引/检索/上传/权限/会话/设置面板初始化逻辑
+      - 远程工具列表拉取等）
+  - 仅把 augment.advanced.chat.url 指向本地：
+      - POST /chat-stream：由本地适配器接管，转到 OpenAI/Anthropic/Google 原生接口（或兼容接口）
+      - 其它所有请求（例如 /agents/list-remote-tools、remote-agents、各种支持端点）：本地适配器原样反代到官方ACE（AUGMENT_ADAPTER_UPSTREAM_URL）
+  - 这样做的关键点是：本地适配器必须实现“工具调用桥接”，否则你永远只会得到纯聊天，不会有 Augment 原生工具能力。
+
+  “Chat / Completion / Enhancer Model” 三者区别（你问过的点）
+
+  - Chat Model：主对话（chat-stream），负责决定要不要用工具、怎么用工具、输出最终回答。
+  - Completion Model：chat 输入框的自动补全（/chat-input-completion），偏短、快、低成本；它不是主聊天回答。
+  - Enhancer Model：Prompt Enhancer（UI 上的 “++”），用于把你写的提示词改写/增强（prompt-enhancer），也不是主聊天回答。
+  - 你想要的行为是合理的：Chat 走自定义 API（BYOK），Completion/Enhancer 继续走官方（或者提供开关）。这就是你所谓“只保留方案 B”。
+
+  你现在的 Cugment 已经做了什么（但仍不足以满足“保留全部工具能力”）
+
+  - Cugment/extension/common-webviews/custom-panel.html：做了一个 BYOK 面板（目前主要英文；布局和截图不一致；删除按钮 UI 也有问题）。
+  - Cugment/extension/out/extension.js：注入了打开面板、保存配置、以及尝试往请求里塞 third_party_override 的 monkeypatch。
+  - Cugment/extension/package.json：注册了 augment.advanced.chat.override.* 的 schema（你报的“未注册配置”理论上在新版应该不会再出
+    现；如果还出现，通常是你装的 VSIX 不是最新，或你在 settings.json 里写了错误的扁平 key）。
+  - “Custom models will appear in Model Picker” 的实现思路是对的：Augment 的 model picker 合并读取augment.advanced.chat.modelDisplayNameToId；但是否生效还取决于：
+      - 你写入后是否触发 chat webview 重新初始化/刷新；
+      - mapping 的 key/value 是否符合它的预期（displayName→modelId）。
+  - 但最关键：这些改动仍然建立在“官方后端支持 third_party_override”的前提上；如果官方后端不支持，那就必须走“本地拦截/本地适配
+    器”路线，而不是指望官方代调。
+
+  为什么你现在“必须要 Cugment”但“local-adapter 又不够”
+
+  - 结论可以这样理解：
+      - 你需要 Cugment：因为你要一个可配置 UI（按截图），能管理 provider/baseUrl/key/models，并影响 chat 的模型选择。
+      - 你也需要更强的 local-adapter：因为只有它（或 Bugment 那种拦截器）能把 Chat 真正打到 OpenAI/Anthropic/Google；而且为了保留工具能力，它必须实现 tool-calling 桥接。
+  - 换句话说：Cugment 解决“配置与集成体验”，local-adapter 解决“请求去向与协议兼容”。两者缺一不可。
+
+  安装/构建的现实约束（你遇到的 pnpm=9 报错）
+  - Cugment/extension/package.json 固定 engines.pnpm: 9，你本机 pnpm=10 会报 ERR_PNPM_UNSUPPORTED_ENGINE。
+
+  你接下来真正要做的核心工作（为了“自定义 API + 保留全部工具能力”）
+
+  - 目标：让 /chat-stream 的“输出”不仅有 text，还能在需要时输出 nodes（包含 tool_use），并正确处理下一轮请求里的tool_result_node。
+  - 实现位置建议：优先在 local-adapter/server.js 做（比改 minify 的 out/extension.js 可维护得多）。
+  - 需要支持的最小闭环（先做 OpenAI/Anthropic，Google 后补）：
+      - 解析 Augment 的 tool_definitions → 转换成 provider 的 tools schema；
+      - 流式调用 provider；
+      - 当 provider 触发 tool call：
+          - 立刻结束本轮 NDJSON：回传一个带 nodes:[{tool_use...}] 的 chunk + stop_reason=3（TOOL_USE_REQUESTED）；
+      - 下一次扩展会带着 tool_result_node 再请求 /chat-stream：
+          - 适配器把 tool result 变成 provider 的 tool result message，再继续生成文本，直到最终 stop_reason=1（END_TURN）。
+
+  我需要你确认的 3 个关键选择（决定实现复杂度）
+
+      1. 你优先支持哪些 provider：只做 openai-compatible + anthropic 先，还是必须一次性加 google？
+      2. 你要不要“严格兼容 OpenAI 工具调用（tools）”，还是只要最常见的 function/tool call 形式？
+      3. 你希望工具调用时“模型自己决定工具参数”，还是你接受先做一个简化版（只支持无工具/或只支持部分工具）来验证链路？
+
+  如果你点头“先做 OpenAI + Anthropic 的 tool-calling 桥接”，我就可以按方案 B 直接把 local-adapter/server.js 升级成“能跑工具的
+  chat-stream 后端”，同时把 Cugment 的 BYOK UI 按你截图做成中文并简化字段顺序（Base URL → API Key → Model ID → …），并修掉 Custom
+  Models 弹窗删除按钮的布局问题。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Bugment 为什么要改这些（动机）
+
+  - Bugment 的核心目标通常不是“改 UI”，而是把官方 Augment 的“云后端”替换成“你自己的后端/代理”（Bugment-server），从而实现自定义模型/
+    自定义路由/绕过登录等。
+  - 你提到的“上下文污染”，本质上往往来自 Bugment 把 /chat-stream 的请求体做了“加壳/重封装”（例如 { encrypted_data, iv,
+    data, ... }）：这会让原始 Augment schema 里的 tool_definitions、nodes 等字段丢失或不可见，导致：
+      - 模型侧拿不到工具定义，无法正确 tool-call；
+      - 扩展侧也就无法执行“Augment 自带工具”，只能退化成纯聊天/幻觉式回答（看起来像上下文污染/工具失效）。
+
+  你列出来的“差异文件”分别对应什么
+
+  - */extension/out/extension.js
+      - VS Code 扩展真正运行的主逻辑（打包后的产物）。
+      - Bugment 改它通常是：拦截网络请求（completion/chat/stream）、改认证流程（autoAuth）、加命令入口（面板）、改 API base URL（指向
+        Bugment-server）等。
+  - Augment/extension/out/extension.js.map
+      - sourcemap（调试/定位源码用）。只要 extension.js 重打包或改过，map 基本都会变。
+  - */extension/package.json
+      - 扩展清单：命令、激活事件、配置 schema、view/webview 注册、图标等。
+      - Bugment 改它通常是：新增 onCommand:* 激活、注册自定义面板命令、改扩展标识/显示名/版本等。
+  - Augment/extension/icon.png、Augment/extension/icon-purple.png、Bugment/extension/icon.png
+      - 扩展图标/品牌区分。Bugment 改图标最常见原因是“避免和官方混淆”。
+  - Bugment/extension/common-webviews/custom-panel.html + Bugment/extension/out/custom-panel.html
+      - 新增的 Webview 面板页面（UI）。
+      - “common-webviews”通常是源素材；“out/”里那份一般是运行时实际读取的拷贝（Bugment 选择把它也放进 out，便于加载/打包）。
+  - */[Content_Types].xml、*/extension.vsixmanifest
+      - VSIX 包的元数据文件（你如果是在解包/重包 VSIX，而不是在源码工程里 vsce package，它们会跟着变）。
+      - 一旦新增/替换文件（HTML/JS/PNG 等）或改了 manifest/图标，这俩文件经常也需要同步更新，否则 VSIX 结构不一致。
+
+  ———
+
+  ## 我已经在 Augment-byok 里做好的实现（不靠 Bugment-server、不加壳、不写 settings.json）
+
+  你要的是“调用 Augment 自带工具 + 可自定义模型 + 一个面板（不用 settings.json）”，并且“官方后端不支持 augment.advanced.chat 自定
+  义”——所以最稳的方案是：让扩展把所有请求都打到扩展自己启动的本地适配器，适配器再转发到你配置的 OpenAI-compatible 上游。
+
+  我做的就是这个：扩展内置一个本地 HTTP 适配器（127.0.0.1 随机端口），并在扩展激活前把 Augment 的 completionURL/chat.url/
+  nextEditURL/... 全部覆盖到这个本地地址，从而：
+
+  - 不需要外部 Bugment-server（没有单独进程、没有额外部署）；
+  - 不需要加壳 payload（扩展发来的 /chat-stream 请求体原样就是 Augment schema）；
+  - Augment 扩展仍然可以执行它自己的工具（关键：tool_definitions 不丢，tool_calls 会被转换回 Augment 期望的 nodes(type=5)）。
+
+  改动/新增的文件
+
+  - Augment-byok/extension/out/byok-server.js
+      - 本地适配器服务端（Node http.createServer），实现/兜底了扩展会调用的一批端点：
+          - POST /chat-stream：把 Augment schema 转 OpenAI chat.completions（stream），并把上游 tool_calls 转回 {nodes:
+            [{type:5,tool_use:...}], stop_reason:3} 触发扩展执行工具。
+          - POST /chat：非流式 chat。
+          - POST /completion、POST /chat-input-completion：返回 completion_items 结构，满足扩展解析。
+          - POST /instruction-stream、POST /smart-paste-stream、POST /next-edit-stream、POST /generate-commit-message-stream：提供
+            NDJSON 流式兜底（至少不崩）。
+          - POST /agents/codebase-retrieval：用本地 rg 做最简单检索（没装 rg 会返回提示）。
+          - POST /agents/edit-file：把 edit-file 请求转给上游模型并抽取 <file_content>...</file_content>。
+          - get-models/get-credit-info/subscription-info/settings/get-tenant-tool-permissions/...：最小结构兜底，避免扩展启动时解析报
+            错。
+  - Augment-byok/extension/out/extension.js
+      - 我在文件末尾注入了一个 “BYOK bootstrap”：
+          - wrap activate：在官方激活逻辑跑之前启动本地适配器，拿到端口后设置内存覆盖配置（completionURL/chat.url/... 指向本地）。
+          - patch 配置读取：hook AugmentConfigListener 的 _getRawSettings()，把 globalThis.__AUGMENT_BYOK_OVERLAY 深合并进去（不写
+            settings.json）。
+          - autoAuth 等价实现：覆盖层里塞了 apiToken: "byok"，让扩展不走 OAuth 登录也能进入“已认证”状态（思路等价于你提到的 Bugment
+            autoAuth）。
+          - 注册面板命令：vscode-augment.showByokPanel。
+  - Augment-byok/extension/common-webviews/byok-panel.html
+      - 新增 BYOK 配置面板（不走 settings.json）：
+          - baseUrl / model / temperature / maxTokens / systemPromptBase
+          - API Key 存 VS Code secrets（不回显）
+  - Augment-byok/extension/package.json
+      - 新增命令与激活事件：
+          - onCommand:vscode-augment.showByokPanel
+          - 命令标题：BYOK 设置...
+
+  ———
+
+  ## 怎么用（最短路径）
+
+  - 在 VS Code 打开命令面板：Ctrl+Shift+P
+  - 运行：BYOK 设置...（命令 ID：vscode-augment.showByokPanel）
+  - 填：
+      - Base URL：例如 https://api.openai.com/v1 / http://localhost:11434/v1 / 你的兼容代理
+      - Model：例如 gpt-4o-mini（或你的兼容模型名）
+      - API Key：OpenAI 需要；本地兼容服务如果不需要可留空（留空=不修改已有 key；点“清除 API Key”才会清掉）
+  - 保存后直接正常用 Augment：聊天/补全会走本地适配器；当模型发起 tool_calls 时，扩展会执行自带工具并回传 tool_result。
+
+  注意
+
+  - 我这里“无需外部服务”的定义是：不需要 Bugment-server 那种额外进程/部署；但扩展内部会启动一个 127.0.0.1 的本地 HTTP 适配器（这是为
+    了最大限度复用官方扩展的既有调用路径）。
+  - 目前很多非核心端点是“兜底不崩”的实现（返回空/ok）；核心链路（chat-stream + tool_calls -> nodes -> 工具执行 -> tool_result）是重点
+    实现的。如果你希望 Next Edit、外部数据源、远程 agents 也完全可用，需要按实际报错再补对应端点的真实协议返回结构。

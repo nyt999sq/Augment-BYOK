@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Augment</title>
+    <script nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+/**
+ * Monaco bootstrap script
+ *
+ * This script is included directly in HTML files to load Monaco editor.
+ * It's kept as a simple JS file to avoid any build/transpilation requirements.
+ */
+
+// Define the Monaco CDN version
+const MONACO_VERSION = "0.52.2";
+const MONACO_CDN_BASE = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_VERSION}/min`;
+
+// Initialize augmentDeps if it doesn't exist
+window.augmentDeps = window.augmentDeps || {};
+
+// Create a promise that will resolve when Monaco is ready
+let monacoResolve;
+window.augmentDeps.monaco = new Promise((resolve) => {
+  monacoResolve = resolve;
+});
+
+// If Monaco is already loaded, don't load it again
+if (window.monaco) {
+  console.log("Monaco already loaded, skipping bootstrap");
+  initializeMonacoDeps();
+} else {
+  // Load the Monaco loader script
+  const loaderScript = document.createElement("script");
+  loaderScript.src = `${MONACO_CDN_BASE}/vs/loader.min.js`;
+  loaderScript.onload = initializeMonaco;
+  document.head.appendChild(loaderScript);
+}
+
+// Initialize Monaco after the loader script has loaded
+function initializeMonaco() {
+  // require is provided by loader.min.js
+  require.config({
+    paths: { vs: `${MONACO_CDN_BASE}/vs` },
+  });
+
+  require(["vs/editor/editor.main"], () => {
+    initializeMonacoDeps();
+  });
+}
+
+// Initialize Monaco dependencies after Monaco has loaded
+function initializeMonacoDeps() {
+  // Resolve the monaco promise
+  if (monacoResolve) {
+    monacoResolve(window.monaco);
+  }
+}
+
+</script>
+    <meta property="csp-nonce" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <script type="module" crossorigin src="./assets/main-panel-BWaqdbJR.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA=="></script>
+    <link rel="modulepreload" crossorigin href="./assets/Icon-CaBYD5oO.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/design-system-init-DCR3FqZN.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/index-DF_yYUtg.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/index-B4NDmpYR.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/IconButtonAugment-Rffikxkp.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/TextTooltipAugment-B4cqQh4H.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/message-broker-CliB7GoL.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/marked.esm-CBEAPn3z.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/_commonjsHelpers-CwkBNZ52.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/types-CaiUesx9.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/await-bImbqfxU.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/BaseTextInput-CPpF4fmq.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/Chevron-Ct6H6suA.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/extension-client-context-CwKdOhUw.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/index-BBZh5tbU.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/index-Ct3ef_qL.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/toggleHighContrast-iCsKcMx3.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/Markdown-oTNiBtsM.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/ButtonAugment-DECgcPdk.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/noop-CVINQ7cR.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/Filespan-CzwbVFJm.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/mermaid-Bezvo2Lx.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/index-nbgGMYE9.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/remote-agents-client-DV0OXQaI.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/SuccessfulButton-Df7hGnns.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/OpenFileButton-BnBhQVIy.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/CopyButton-BCoIBrt5.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/LanguageIcon-Du_otND8.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/keypress-fD7XHdyk.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/TextAreaAugment-BzfuWeQA.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/utils-DpHtg3Qz.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/CalloutAugment-DfDZpfuE.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/key-CsCKik6T.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/AugmentMessage-BDJkLW0G.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/RemoteAgentStatusIndicator-qmKRPmeO.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/index-Dt79ugWJ.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/shared-app-state-BibCi4jI.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/shared-webview-store-model-BEcw7czj.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/ra-diff-ops-model-Bh6ZhEmC.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/TextCombo-89YZbRHm.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/Keybindings-4dJzjBQT.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/next-edit-types-B8NR3rVy.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/IconFilePath-BTkL5YPt.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/Icon-CWaUcQrN.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/design-system-init-B00RcY-y.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/index-C0nJVisN.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/IconButtonAugment-C5YuOP3Q.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/TextTooltipAugment-BrStpLh1.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/marked-CiHxamUn.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/types-Do4WQCrW.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/BaseTextInput-DRN2HXtk.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/Chevron-BvwCR8GX.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/extension-client-context-Dj7vR6Ei.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/index-BfCo9mu2.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/toggleHighContrast-C5ZQUaPo.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/Markdown-BYdFgLHb.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/ButtonAugment-BdekU6N_.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/Filespan-DBFcC0Za.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/SuccessfulButton-BDZRP7A9.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/OpenFileButton-Dz9EvsKp.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/CopyButton-CejWQ-s8.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/LanguageIcon-6rdAPCNm.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/TextAreaAugment-C3YgGx7o.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/CalloutAugment-VvLaGQMh.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/AugmentMessage-BcMQrsKc.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/RemoteAgentStatusIndicator-wc-ehh4U.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/shared-app-state-3h2gUBbE.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/TextCombo-B7DuYcHs.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/Keybindings-D3F--4X8.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/IconFilePath-B4VZo0AU.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/main-panel-B5wyOYyF.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

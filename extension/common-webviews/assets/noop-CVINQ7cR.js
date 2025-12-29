@@ -1,0 +1,2 @@
+try{e=typeof window<"u"?window:typeof global<"u"?global:typeof globalThis<"u"?globalThis:typeof self<"u"?self:{},(n=new e.Error().stack)&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="33a09e68-ceb5-45ba-92a7-36bf05ea6829",e._sentryDebugIdIdentifier="sentry-dbid-33a09e68-ceb5-45ba-92a7-36bf05ea6829")}catch{}var e,n;function a(){}export{a as n};
+//# sourceMappingURL=noop-CVINQ7cR.js.map

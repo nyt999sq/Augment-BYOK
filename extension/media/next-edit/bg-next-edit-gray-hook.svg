@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Hook-Range</title>
+    <g id="Hook-Range" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <polygon id="path1" fill="#A4A4A4" fill-rule="nonzero" points="7.00000062 -2.99633789 7.00000062 0.996337891 7.99999938 0.996337891 7.99999938 -2.99633789"></polygon>
+        <g id="Curve" transform="translate(7.5, 1)" stroke="#A4A4A4" stroke-linejoin="round">
+            <path d="M5.85181694,6.5 C5.77043213,6.5 5.7369774,6.49909214 5.65949517,6.49730801 C5.3434366,6.49003036 5.0484039,6.50408176 4.76948052,6.49730801 C3.77168696,6.47307628 3.00080331,6.39825902 2.39637261,6.05541992 C1.58155779,5.59324886 0.942086359,4.91503162 0.506318627,4.05084687 C0.0705508954,3.18666213 0,1.69794896 0,0" id="Rectangle"></path>
+            <path d="M6.01026421,6.5 C4.40931721,6.5 3.22855166,6.51759098 2.41373685,6.05541992" id="Rectangle" stroke-linecap="round"></path>
+        </g>
+    </g>
+</svg>

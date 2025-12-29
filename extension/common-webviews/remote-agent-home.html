@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remote Agents</title>
+    <script nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+/**
+ * Monaco bootstrap script
+ *
+ * This script is included directly in HTML files to load Monaco editor.
+ * It's kept as a simple JS file to avoid any build/transpilation requirements.
+ */
+
+// Define the Monaco CDN version
+const MONACO_VERSION = "0.52.2";
+const MONACO_CDN_BASE = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_VERSION}/min`;
+
+// Initialize augmentDeps if it doesn't exist
+window.augmentDeps = window.augmentDeps || {};
+
+// Create a promise that will resolve when Monaco is ready
+let monacoResolve;
+window.augmentDeps.monaco = new Promise((resolve) => {
+  monacoResolve = resolve;
+});
+
+// If Monaco is already loaded, don't load it again
+if (window.monaco) {
+  console.log("Monaco already loaded, skipping bootstrap");
+  initializeMonacoDeps();
+} else {
+  // Load the Monaco loader script
+  const loaderScript = document.createElement("script");
+  loaderScript.src = `${MONACO_CDN_BASE}/vs/loader.min.js`;
+  loaderScript.onload = initializeMonaco;
+  document.head.appendChild(loaderScript);
+}
+
+// Initialize Monaco after the loader script has loaded
+function initializeMonaco() {
+  // require is provided by loader.min.js
+  require.config({
+    paths: { vs: `${MONACO_CDN_BASE}/vs` },
+  });
+
+  require(["vs/editor/editor.main"], () => {
+    initializeMonacoDeps();
+  });
+}
+
+// Initialize Monaco dependencies after Monaco has loaded
+function initializeMonacoDeps() {
+  // Resolve the monaco promise
+  if (monacoResolve) {
+    monacoResolve(window.monaco);
+  }
+}
+
+</script>
+    <meta property="csp-nonce" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <script type="module" crossorigin src="./assets/remote-agent-home-Dx7FBC32.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA=="></script>
+    <link rel="modulepreload" crossorigin href="./assets/Icon-CaBYD5oO.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/design-system-init-DCR3FqZN.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/message-broker-CliB7GoL.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/index-nbgGMYE9.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/utils-DpHtg3Qz.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/RemoteAgentStatusIndicator-qmKRPmeO.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/shared-webview-store-model-BEcw7czj.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/IconButtonAugment-Rffikxkp.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/TextTooltipAugment-B4cqQh4H.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/CalloutAugment-DfDZpfuE.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/types-CaiUesx9.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/RepoBadge-DexbRR0E.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="modulepreload" crossorigin href="./assets/remote-agents-client-DV0OXQaI.js" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/Icon-CWaUcQrN.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/design-system-init-B00RcY-y.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/RemoteAgentStatusIndicator-wc-ehh4U.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/TextTooltipAugment-BrStpLh1.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/CalloutAugment-VvLaGQMh.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/IconButtonAugment-C5YuOP3Q.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/types-Do4WQCrW.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/RepoBadge-DzN41so8.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/remote-agent-home-DBiFJOjj.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+    <link rel="stylesheet" crossorigin href="./assets/remote-agent-panel-base-CnFi-G2o.css" nonce="nonce-TRsnEn6ZeO4NvkxsRFmzMA==">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

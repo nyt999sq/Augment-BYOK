@@ -1,0 +1,1901 @@
+{
+  "name": "vscode-augment",
+  "displayName": "Augment Code: AI Coding Agent for JavaScript, Go, TypeScript, Python & more",
+  "publisher": "Augment",
+  "repository": {},
+  "private": true,
+  "preview": false,
+  "license": "https://www.augmentcode.com/terms-of-service",
+  "description": "Augment is an AI copilot with a superior context engine and agents that truly understand your codebase—from a single line to 100M lines. Tackle complex architectures and legacy systems with reliable answers, context-aware code actions, and instant comprehension.",
+  "version": "0.696.2",
+  "engines": {
+    "vscode": "^1.82.0",
+    "node": ">= 18.15.0",
+    "npm": "please-use-pnpm",
+    "yarn": "please-use-pnpm",
+    "pnpm": ">=9"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages",
+    "Snippets",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "agents",
+    "ai",
+    "ai agents",
+    "artificial intelligence",
+    "assistant",
+    "autocomplete",
+    "chat",
+    "code completion",
+    "coding assistant",
+    "copilot",
+    "intellisense",
+    "mcp",
+    "pair programming",
+    "remote agents",
+    "c",
+    "c++",
+    "c#",
+    "css",
+    "go",
+    "html",
+    "java",
+    "javascript",
+    "node.js",
+    "php",
+    "python",
+    "react",
+    "ruby",
+    "rust",
+    "swift",
+    "typescript"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onWebviewPanel:augmentSettingsPanel",
+    "onWebviewPanel:augmentMermaidDiagram",
+    "onCommand:vscode-augment.showByokPanel"
+  ],
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#000000",
+    "theme": "dark"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "rules.augment",
+        "displayName": "Augment Rules Viewer",
+        "selector": [
+          {
+            "filenamePattern": "**/.augment/rules/**/*.md"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "memories.augment",
+        "displayName": "Augment Memories Viewer",
+        "selector": [
+          {
+            "filenamePattern": "**/workspaceStorage/*/Augment.vscode-augment/Augment-Memories"
+          },
+          {
+            "filenamePattern": "**/workspaceStorage/*/Augment.vscode-augment-nightly/Augment-Memories"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Augment",
+        "properties": {
+          "augment.disableFocusOnAugmentPanel": {
+            "type": "boolean",
+            "order": 0,
+            "default": false,
+            "description": "Disable opening the Augment panel."
+          },
+          "augment.completions.enableAutomaticCompletions": {
+            "type": "boolean",
+            "order": 0,
+            "default": true,
+            "description": "Provide automatic inline code completions (manual code completions are always available)."
+          },
+          "augment.completions.enableQuickSuggestions": {
+            "type": "boolean",
+            "order": 1,
+            "default": true,
+            "description": "Add Augment to the IntelliSense pop-up suggestions."
+          },
+          "augment.completions.disableCompletionsByLanguage": {
+            "type": "array",
+            "order": 2,
+            "default": [
+              "git-commit",
+              "scminput"
+            ],
+            "markdownDescription": "Disable completions by [language identifiers](https://code.visualstudio.com/docs/languages/identifiers).",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "augment.completions.enableChatInputCompletions": {
+            "type": "boolean",
+            "order": 3,
+            "default": true,
+            "description": "Provide automatic completions in the chat input box."
+          },
+          "augment.enableEmptyFileHint": {
+            "type": "boolean",
+            "order": 3,
+            "default": true,
+            "description": "Display a hint to use Augment Chat when an empty file is open."
+          },
+          "augment.conflictingCodingAssistantCheck": {
+            "type": "boolean",
+            "order": 4,
+            "default": true,
+            "description": "Check for conflicting coding assistants when starting up and installing extensions."
+          },
+          "augment.advanced": {
+            "type": "object",
+            "order": 99999,
+            "default": {},
+            "properties": {
+              "apiToken": {
+                "type": "string",
+                "default": "",
+                "description": "API token for Augment access."
+              },
+              "completionURL": {
+                "type": "string",
+                "default": "",
+                "description": "URL of completion server."
+              },
+              "completions": {
+                "type": "object",
+                "default": {},
+                "properties": {
+                  "timeoutMs": {
+                    "default": 800,
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The default timeout for completions (in milliseconds)."
+                  },
+                  "maxWaitMs": {
+                    "default": 1600,
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The max timeout for completions items (in milliseconds). This allows Augment to retry completions that are cancelled due to changes in the editor."
+                  },
+                  "addIntelliSenseSuggestions": {
+                    "default": true,
+                    "type": "boolean",
+                    "description": "Enable completions in the intellisense pop-up."
+                  }
+                }
+              },
+              "mcpServers": {
+                "type": "array",
+                "default": [
+                  {}
+                ],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "command": {
+                      "type": "string",
+                      "description": "The command to run the MCP server"
+                    },
+                    "args": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Arguments to pass to the MCP server command"
+                    },
+                    "timeoutMs": {
+                      "type": "number",
+                      "description": "Timeout in milliseconds for MCP server operations"
+                    },
+                    "env": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Dictionary of Environment variables to set for the MCP server"
+                    }
+                  }
+                },
+                "description": "List of MCP server configurations"
+              },
+              "integrations": {
+                "type": "object",
+                "default": {},
+                "properties": {
+                  "atlassian": {
+                    "type": "object",
+                    "default": {},
+                    "properties": {
+                      "serverUrl": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Atlassian server URL"
+                      },
+                      "personalApiToken": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Personal API token for Atlassian"
+                      },
+                      "username": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Atlassian username"
+                      }
+                    }
+                  },
+                  "notion": {
+                    "type": "object",
+                    "default": {},
+                    "properties": {
+                      "apiToken": {
+                        "type": "string",
+                        "default": "",
+                        "description": "API token for Notion"
+                      }
+                    }
+                  },
+                  "linear": {
+                    "type": "object",
+                    "default": {},
+                    "properties": {
+                      "apiToken": {
+                        "type": "string",
+                        "default": "",
+                        "description": "API token for Linear"
+                      }
+                    }
+                  },
+                  "github": {
+                    "type": "object",
+                    "default": {},
+                    "properties": {
+                      "apiToken": {
+                        "type": "string",
+                        "default": "",
+                        "description": "API token for GitHub"
+                      }
+                    }
+                  }
+                },
+                "description": "Integration configurations for third-party services"
+              }
+            }
+          }
+        }
+      },
+      {
+        "title": "Next Edit",
+        "properties": {
+          "augment.nextEdit.enableBackgroundSuggestions": {
+            "type": "boolean",
+            "order": 0,
+            "default": true,
+            "description": "Enable Next Edit to run in the background and suggest changes in the editor."
+          },
+          "augment.nextEdit.enableGlobalBackgroundSuggestions": {
+            "type": "boolean",
+            "order": 1,
+            "default": false,
+            "description": "Enable Next Edit to hint changes in files beyond the active editor tab."
+          },
+          "augment.nextEdit.enableAutoApply": {
+            "type": "boolean",
+            "order": 2,
+            "default": true,
+            "description": "Automatically apply suggestions when you jump to them."
+          },
+          "augment.nextEdit.showDiffInHover": {
+            "type": "boolean",
+            "order": 3,
+            "default": false,
+            "description": "Show a diff of the suggested change in the hover."
+          },
+          "augment.nextEdit.highlightSuggestionsInTheEditor": {
+            "type": "boolean",
+            "order": 4,
+            "default": false,
+            "description": "Highlight all lines with a suggestion in addition to showing gutter icons and gray hint-text."
+          }
+        }
+      },
+      {
+        "title": "Experimental",
+        "properties": {
+          "augment.chat.userGuidelines": {
+            "type": "string",
+            "order": 5,
+            "default": "",
+            "description": "Edit this field on the Augment settings page."
+          },
+          "augment.experimental.terminal.vscodeTerminalStrategy": {
+            "type": "string",
+            "enum": [
+              "VSCode",
+              "Augment"
+            ],
+            "enumDescriptions": [
+              "Use VSCode's built-in terminal events",
+              "Use Augment's customized terminal support"
+            ],
+            "description": "Select the implementation Augment should use for using the terminal",
+            "order": 1
+          }
+        }
+      }
+    ],
+    "commands": [
+      {
+        "category": "Augment",
+        "command": "vscode-augment.showByokPanel",
+        "title": "BYOK 设置..."
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.o",
+        "title": "View Diff"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.i",
+        "title": "Code Instruction"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.aac",
+        "title": "Accept All Chunks"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.afc",
+        "title": "Accept Focused Chunk"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.rfc",
+        "title": "Reject Focused Chunk"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.fpc",
+        "title": "Focus Previous Chunk"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.fnc",
+        "title": "Focus Next Chunk"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.internal-dv.c",
+        "title": "Close Diff View"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.insertCompletion",
+        "title": "Insert Completion"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.settings",
+        "title": "$(gear) Edit Settings..."
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.keyboard-shortcuts",
+        "title": "$(keyboard) Edit Keyboard Shortcuts..."
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.showDocs",
+        "title": "Help",
+        "icon": "$(question)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.showAccountPage",
+        "title": "Account & Billing",
+        "icon": "$(note)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.toggleAutomaticCompletionSetting",
+        "title": "Toggle Automatic Completions"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.signIn",
+        "title": "$(sign-in) Sign In"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.signOut",
+        "title": "$(sign-out) Sign Out"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.chat.slash.fix",
+        "title": "Fix using Augment"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.chat.slash.explain",
+        "title": "Explain using Augment"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.chat.slash.test",
+        "title": "Write test using Augment"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.chat.slash.document",
+        "title": "Document using Augment"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.showHistoryPanel",
+        "title": "$(history) Show History"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.copySessionId",
+        "title": "Copy Session ID"
+      },
+      {
+        "category": "Augment",
+        "command": "_vscode-augment.showSidebarWorkspaceContext",
+        "title": "Manage Workspace Context",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "category": "Augment",
+        "command": "_vscode-augment.showSidebarChat",
+        "title": "Show Chat",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.generateCommitMessage",
+        "title": "Generate Commit Message with Augment",
+        "icon": "$(sparkle)",
+        "when": "vscode-augment.enableGenerateCommitMessage && gitOpenRepositoryCount != 0"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.showSettingsPanel",
+        "title": "Settings",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.showAugmentCommands",
+        "title": "Show Augment Commands",
+        "icon": "$(menu)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.focusAugmentPanel",
+        "title": "$(layout-sidebar-left) Open Augment"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.startNewChat",
+        "title": "Start New Chat"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.addFileToChat",
+        "title": "Add File to Augment Chat"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.addFolderToChat",
+        "title": "Add Folder to Augment Chat"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.addTerminalOutputToChat",
+        "title": "Add Selection to Augment Chat"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.clear-recent-editing-history",
+        "title": "Clear Recent Editing History"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.showRemoteAgentsPanel",
+        "title": "Show Remote Agents Panel",
+        "when": "vscode-augment.featureFlags.enableRemoteAgents"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.openSshConfig",
+        "title": "Open Augment SSH Config",
+        "when": "vscode-augment.featureFlags.enableRemoteAgents"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.zipAugmentUserAssets",
+        "title": "Zip Augment User Assets",
+        "icon": "$(archive)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.force",
+        "title": "View Nearby Next Edit Suggestions (Forced)",
+        "when": "vscode-augment.enableNextEdit && (editorTextFocus || editorHoverFocused)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.toggle-panel-horizontal-split",
+        "title": "Toggle Side Panel Split",
+        "icon": "$(split-horizontal)",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.update",
+        "title": "Update Next Edit Suggestions",
+        "icon": {
+          "light": "media/next-edit/nextedit-update-light.svg",
+          "dark": "media/next-edit/nextedit-update-dark.svg"
+        },
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "command": "_vscode-augment.next-edit.update.loading",
+        "title": "Updating Suggestions...",
+        "icon": {
+          "light": "media/next-edit/nextedit-update-loading-light.svg",
+          "dark": "media/next-edit/nextedit-update-loading-dark.svg"
+        },
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "command": "_vscode-augment.next-edit.update.disabled-no-changes",
+        "title": "No Updates Available",
+        "icon": {
+          "light": "media/next-edit/nextedit-update-disabled-light.svg",
+          "dark": "media/next-edit/nextedit-update-disabled-dark.svg"
+        },
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "command": "_vscode-augment.next-edit.update.disabled-cached",
+        "title": "Suggestions Up To Date",
+        "icon": {
+          "light": "media/next-edit/nextedit-update-complete-light.svg",
+          "dark": "media/next-edit/nextedit-update-complete-dark.svg"
+        },
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "command": "vscode-augment.next-edit.learn-more",
+        "title": "Learn about Next Edit...",
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.open-panel",
+        "title": "Open Next Edit Panel",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.accept",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAccept && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "title": "Accept Suggestion"
+      },
+      {
+        "category": "Augment",
+        "command": "_vscode-augment.next-edit.background.accept-code-action",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAcceptCodeAction",
+        "title": "Accept Suggestion"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.accept-all",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAcceptAll",
+        "title": "Accept All Suggestions"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.reject",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canReject && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "title": "Reject Suggestion"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.reject-all",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canRejectAll",
+        "title": "Reject All Suggestions"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.dismiss",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canDismiss && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "title": "Dismiss Suggestion Highlights"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.next",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canNextSmart",
+        "title": "Go to Next Suggestion (Smart)"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.next-forward",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canNext",
+        "title": "Go to Next Suggestion",
+        "icon": {
+          "light": "media/next-edit/right-light-enabled.svg",
+          "dark": "media/next-edit/right-dark-enabled.svg"
+        }
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.background.previous",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canPrevious",
+        "title": "Go to Previous Suggestion",
+        "icon": {
+          "light": "media/next-edit/left-light-enabled.svg",
+          "dark": "media/next-edit/left-dark-enabled.svg"
+        }
+      },
+      {
+        "category": "Augment",
+        "command": "_vscode-augment.next-edit.background.next-forward.disabled",
+        "title": "Go to Next Suggestion",
+        "icon": {
+          "light": "media/next-edit/right-light-disabled.svg",
+          "dark": "media/next-edit/right-dark-disabled.svg"
+        },
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "category": "Augment",
+        "command": "_vscode-augment.next-edit.background.previous.disabled",
+        "title": "Go to Previous Suggestion",
+        "icon": {
+          "light": "media/next-edit/left-light-disabled.svg",
+          "dark": "media/next-edit/left-dark-disabled.svg"
+        },
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "category": "Augment",
+        "command": "_vscode-augment.next-edit.background.open",
+        "title": "Augment Next Edit: View Suggestion",
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.toggle-bg",
+        "title": "Toggle Background Suggestions",
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.enable-bg",
+        "title": "Enable Background Suggestions",
+        "when": "vscode-augment.enableNextEdit && !vscode-augment.enableNextEditBackgroundSuggestions"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.disable-bg",
+        "title": "Disable Background Suggestions",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.enableNextEditBackgroundSuggestions"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.toggle-all-highlights",
+        "title": "Toggle Suggestion Highlights",
+        "when": "vscode-augment.enableNextEdit"
+      },
+      {
+        "category": "Augment",
+        "command": "vscode-augment.next-edit.settings",
+        "title": "Next Edit Settings...",
+        "when": "vscode-augment.enableNextEdit"
+      }
+    ],
+    "icons": {
+      "augment-icon-simple": {
+        "description": "Augment logo (simple)",
+        "default": {
+          "fontPath": "augment-icon-font.woff",
+          "fontCharacter": "\\E900"
+        }
+      },
+      "augment-icon-smile": {
+        "description": "Augment logo (smile)",
+        "default": {
+          "fontPath": "augment-icon-font.woff",
+          "fontCharacter": "\\E901"
+        }
+      },
+      "augment-icon-zero": {
+        "description": "Augment logo (zero)",
+        "default": {
+          "fontPath": "augment-icon-font.woff",
+          "fontCharacter": "\\E902"
+        }
+      },
+      "augment-icon-error": {
+        "description": "Augment logo (error)",
+        "default": {
+          "fontPath": "augment-icon-font.woff",
+          "fontCharacter": "\\E903"
+        }
+      },
+      "augment-icon-closed-eyes": {
+        "description": "Augment logo (closed eyes)",
+        "default": {
+          "fontPath": "augment-icon-font.woff",
+          "fontCharacter": "\\E904"
+        }
+      },
+      "augment-icon-dots": {
+        "description": "Augment logo (dots)",
+        "default": {
+          "fontPath": "augment-icon-font.woff",
+          "fontCharacter": "\\E905"
+        }
+      },
+      "augment-kb-z": {
+        "description": "Keyboard icon Z",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f101"
+        }
+      },
+      "augment-kb-y": {
+        "description": "Keyboard icon Y",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f102"
+        }
+      },
+      "augment-kb-x": {
+        "description": "Keyboard icon X",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f103"
+        }
+      },
+      "augment-kb-win": {
+        "description": "Keyboard icon Win",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f104"
+        }
+      },
+      "augment-kb-w": {
+        "description": "Keyboard icon W",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f105"
+        }
+      },
+      "augment-kb-v": {
+        "description": "Keyboard icon V",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f106"
+        }
+      },
+      "augment-kb-u": {
+        "description": "Keyboard icon U",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f107"
+        }
+      },
+      "augment-kb-tab": {
+        "description": "Keyboard icon Tab",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f108"
+        }
+      },
+      "augment-kb-t": {
+        "description": "Keyboard icon T",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f109"
+        }
+      },
+      "augment-kb-shift": {
+        "description": "Keyboard icon Shift",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f10a"
+        }
+      },
+      "augment-kb-semicolon": {
+        "description": "Keyboard icon Semicolon",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f10b"
+        }
+      },
+      "augment-kb-s": {
+        "description": "Keyboard icon S",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f10c"
+        }
+      },
+      "augment-kb-return": {
+        "description": "Keyboard icon Return",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f10d"
+        }
+      },
+      "augment-kb-r": {
+        "description": "Keyboard icon R",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f10e"
+        }
+      },
+      "augment-kb-q": {
+        "description": "Keyboard icon Q",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f10f"
+        }
+      },
+      "augment-kb-p": {
+        "description": "Keyboard icon P",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f110"
+        }
+      },
+      "augment-kb-option": {
+        "description": "Keyboard icon Option",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f111"
+        }
+      },
+      "augment-kb-o": {
+        "description": "Keyboard icon O",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f112"
+        }
+      },
+      "augment-kb-n": {
+        "description": "Keyboard icon N",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f113"
+        }
+      },
+      "augment-kb-meta": {
+        "description": "Keyboard icon Meta",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f114"
+        }
+      },
+      "augment-kb-m": {
+        "description": "Keyboard icon M",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f115"
+        }
+      },
+      "augment-kb-l": {
+        "description": "Keyboard icon L",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f116"
+        }
+      },
+      "augment-kb-k": {
+        "description": "Keyboard icon K",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f117"
+        }
+      },
+      "augment-kb-j": {
+        "description": "Keyboard icon J",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f118"
+        }
+      },
+      "augment-kb-i": {
+        "description": "Keyboard icon I",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f119"
+        }
+      },
+      "augment-kb-h": {
+        "description": "Keyboard icon H",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f11a"
+        }
+      },
+      "augment-kb-g": {
+        "description": "Keyboard icon G",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f11b"
+        }
+      },
+      "augment-kb-f": {
+        "description": "Keyboard icon F",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f11c"
+        }
+      },
+      "augment-kb-escape": {
+        "description": "Keyboard icon Escape",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f11d"
+        }
+      },
+      "augment-kb-e": {
+        "description": "Keyboard icon E",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f11e"
+        }
+      },
+      "augment-kb-delete": {
+        "description": "Keyboard icon Delete",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f11f"
+        }
+      },
+      "augment-kb-d": {
+        "description": "Keyboard icon D",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f120"
+        }
+      },
+      "augment-kb-ctrl": {
+        "description": "Keyboard icon Ctrl",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f121"
+        }
+      },
+      "augment-kb-control": {
+        "description": "Keyboard icon Control",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f122"
+        }
+      },
+      "augment-kb-command": {
+        "description": "Keyboard icon Command",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f123"
+        }
+      },
+      "augment-kb-c": {
+        "description": "Keyboard icon C",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f124"
+        }
+      },
+      "augment-kb-backspace": {
+        "description": "Keyboard icon Backspace",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f125"
+        }
+      },
+      "augment-kb-b": {
+        "description": "Keyboard icon B",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f126"
+        }
+      },
+      "augment-kb-alt": {
+        "description": "Keyboard icon Alt",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f127"
+        }
+      },
+      "augment-kb-a": {
+        "description": "Keyboard icon A",
+        "default": {
+          "fontPath": "augment-kb-icon-font.woff",
+          "fontCharacter": "\\f128"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "vscode-augment.insertCompletion",
+        "when": "editorHasCompletionItemProvider && editorTextFocus && !editorReadonly",
+        "key": "ctrl-f11",
+        "mac": "ctrl-f11"
+      },
+      {
+        "command": "vscode-augment.focusAugmentPanel",
+        "key": "ctrl-alt-i",
+        "mac": "cmd-ctrl-i"
+      },
+      {
+        "command": "vscode-augment.focusAugmentPanel",
+        "key": "ctrl-l",
+        "mac": "cmd-l"
+      },
+      {
+        "command": "vscode-augment.internal-dv.o",
+        "when": "vscode-augment.enableDebugFeatures",
+        "key": "ctrl-alt-o",
+        "mac": "cmd-ctrl-o"
+      },
+      {
+        "command": "vscode-augment.internal-dv.i",
+        "when": "(vscode-augment.internal-dv.enabled || vscode-augment.enableDebugFeatures) && !editorReadonly && !terminalFocus",
+        "key": "ctrl-i",
+        "mac": "cmd-i"
+      },
+      {
+        "command": "vscode-augment.internal-dv.aac",
+        "when": "(vscode-augment.internal-dv.enabled || vscode-augment.enableDebugFeatures) && activeWebviewPanelId == augmentDiffView && vscode-augment.internal-dv.panel-focused",
+        "key": "ctrl-enter",
+        "mac": "cmd-enter"
+      },
+      {
+        "command": "vscode-augment.internal-dv.afc",
+        "when": "(vscode-augment.internal-dv.enabled || vscode-augment.enableDebugFeatures) && activeWebviewPanelId == augmentDiffView && vscode-augment.internal-dv.panel-focused",
+        "key": "enter",
+        "mac": "enter"
+      },
+      {
+        "command": "vscode-augment.internal-dv.rfc",
+        "when": "(vscode-augment.internal-dv.enabled || vscode-augment.enableDebugFeatures) && activeWebviewPanelId == augmentDiffView && vscode-augment.internal-dv.panel-focused",
+        "key": "backspace"
+      },
+      {
+        "command": "vscode-augment.internal-dv.fpc",
+        "when": "(vscode-augment.internal-dv.enabled || vscode-augment.enableDebugFeatures) && activeWebviewPanelId == augmentDiffView && vscode-augment.internal-dv.panel-focused",
+        "key": "up"
+      },
+      {
+        "command": "vscode-augment.internal-dv.fnc",
+        "when": "(vscode-augment.internal-dv.enabled || vscode-augment.enableDebugFeatures) && activeWebviewPanelId == augmentDiffView && vscode-augment.internal-dv.panel-focused",
+        "key": "down"
+      },
+      {
+        "command": "vscode-augment.internal-dv.c",
+        "when": "(vscode-augment.internal-dv.enabled || vscode-augment.enableDebugFeatures) && activeWebviewPanelId == augmentDiffView && vscode-augment.internal-dv.panel-focused",
+        "key": "escape"
+      },
+      {
+        "command": "vscode-augment.showAugmentCommands",
+        "key": "ctrl-shift-a",
+        "mac": "cmd-shift-a"
+      },
+      {
+        "command": "vscode-augment.toggleAutomaticCompletionSetting",
+        "key": "ctrl-alt-a",
+        "mac": "cmd-alt-a"
+      },
+      {
+        "command": "vscode-augment.showRemoteAgentsPanel",
+        "when": "vscode-augment.featureFlags.enableRemoteAgents",
+        "key": "ctrl-shift-r",
+        "mac": "cmd-shift-r",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.accept",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAccept && !editorTextFocus && (activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "ctrl-y",
+        "mac": "cmd-shift-z",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.accept",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAccept && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "ctrl-enter",
+        "mac": "cmd-enter",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.accept",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAccept && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "enter",
+        "mac": "enter",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.accept",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAccept && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "tab",
+        "mac": "tab",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.accept-all",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAcceptAll && augment-next-edit.active",
+        "key": "ctrl-alt-enter",
+        "mac": "cmd-alt-enter",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.reject",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canReject && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "ctrl-backspace",
+        "mac": "cmd-backspace",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.reject",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canReject && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "backspace",
+        "mac": "backspace",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.reject-all",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canRejectAll && augment-next-edit.active",
+        "key": "ctrl-alt-backspace",
+        "mac": "cmd-alt-backspace",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.dismiss",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canDismiss && (((editorTextFocus || editorHoverFocused) && !suggestWidgetVisible) || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel') && !inlineSuggestionVisible && !editorHasSelection && (!vim.active || vim.mode == 'Normal')",
+        "key": "escape",
+        "mac": "escape",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.next",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canNextSmart",
+        "key": "ctrl-;",
+        "mac": "cmd-;",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.next-forward",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canNext",
+        "key": "ctrl-shift-'",
+        "mac": "cmd-shift-'",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.background.previous",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canPrevious",
+        "key": "ctrl-shift-;",
+        "mac": "cmd-shift-;",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.force",
+        "when": "vscode-augment.enableNextEdit && (editorTextFocus || editorHoverFocused || activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "ctrl-alt-;",
+        "mac": "cmd-ctrl-;",
+        "args": "keybinding"
+      },
+      {
+        "command": "vscode-augment.next-edit.open-panel",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel",
+        "key": "ctrl-'",
+        "mac": "cmd-'",
+        "args": "keybinding"
+      },
+      {
+        "command": "_vscode-augment.next-edit.undo-accept-suggestion",
+        "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canUndoAcceptSuggestion && !editorTextFocus && (activePanel == 'workbench.view.extension.augment-panel' || activeViewlet == 'workbench.view.extension.augment-panel')",
+        "key": "ctrl-z",
+        "mac": "cmd-z",
+        "args": "keybinding"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "vscode-augment.context-submenu",
+        "label": "Send to Augment"
+      },
+      {
+        "id": "vscode-augment.viewTitleMenuEntryPoint",
+        "label": "Augment Options",
+        "icon": "$(gear)"
+      },
+      {
+        "id": "vscode-augment.next-edit.editor-action-submenu",
+        "label": "Next Edit",
+        "icon": {
+          "light": "media/next-edit/nextedit-available-light.svg",
+          "dark": "media/next-edit/nextedit-available-dark.svg"
+        }
+      },
+      {
+        "id": "vscode-augment.next-edit.editor-action-submenu.disabled",
+        "label": "Next Edit",
+        "icon": {
+          "light": "media/next-edit/nextedit-unavailable-light.svg",
+          "dark": "media/next-edit/nextedit-unavailable-dark.svg"
+        }
+      },
+      {
+        "id": "vscode-augment.next-edit.editor-action-submenu.loading",
+        "label": "Next Edit",
+        "icon": {
+          "light": "media/next-edit/nextedit-loading-light.svg",
+          "dark": "media/next-edit/nextedit-loading-dark.svg"
+        }
+      },
+      {
+        "id": "vscode-augment.next-edit.panel-submenu",
+        "label": "Next Edit Menu",
+        "icon": "$(ellipsis)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "submenu": "vscode-augment.viewTitleMenuEntryPoint",
+          "when": "view == augment-chat && vscode-augment.mainPanel.app == 'chat'",
+          "group": "navigation@0"
+        },
+        {
+          "command": "vscode-augment.next-edit.update",
+          "when": "view == augment-next-edit && !vscode-augment.nextEdit.global.updating && vscode-augment.nextEdit.global.canUpdate && !vscode-augment.nextEdit.global.updateCached",
+          "group": "navigation@1"
+        },
+        {
+          "command": "_vscode-augment.next-edit.update.loading",
+          "when": "view == augment-next-edit && vscode-augment.nextEdit.global.updating",
+          "group": "navigation@1"
+        },
+        {
+          "command": "_vscode-augment.next-edit.update.disabled-no-changes",
+          "when": "view == augment-next-edit && !vscode-augment.nextEdit.global.updating && !vscode-augment.nextEdit.global.canUpdate",
+          "group": "navigation@1"
+        },
+        {
+          "command": "_vscode-augment.next-edit.update.disabled-cached",
+          "when": "view == augment-next-edit && !vscode-augment.nextEdit.global.updating && vscode-augment.nextEdit.global.canUpdate && vscode-augment.nextEdit.global.updateCached",
+          "group": "navigation@1"
+        },
+        {
+          "submenu": "vscode-augment.next-edit.panel-submenu",
+          "when": "view == augment-next-edit",
+          "group": "navigation@2"
+        }
+      ],
+      "vscode-augment.viewTitleMenuEntryPoint": [
+        {
+          "command": "vscode-augment.showSettingsPanel",
+          "group": "menu@1"
+        },
+        {
+          "command": "vscode-augment.showDocs",
+          "group": "menu@2"
+        },
+        {
+          "command": "vscode-augment.showAccountPage",
+          "group": "menu@3"
+        },
+        {
+          "command": "vscode-augment.signOut",
+          "group": "menu@4"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "vscode-augment.context-submenu",
+          "group": "0_augment"
+        },
+        {
+          "command": "vscode-augment.next-edit.force",
+          "group": "1_modification",
+          "when": "vscode-augment.enableNextEdit"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "vscode-augment.addFileToChat",
+          "group": "navigation",
+          "when": "!explorerResourceIsFolder"
+        },
+        {
+          "command": "vscode-augment.addFolderToChat",
+          "group": "navigation",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "vscode-augment.context-submenu": [
+        {
+          "command": "vscode-augment.focusAugmentPanel",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "vscode-augment.chat.slash.explain",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "vscode-augment.chat.slash.test",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "vscode-augment.chat.slash.fix",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "vscode-augment.chat.slash.document",
+          "when": "editorHasSelection"
+        }
+      ],
+      "editor/lineNumber/context": [
+        {
+          "command": "_vscode-augment.next-edit.background.open",
+          "when": "vscode-augment.enableNextEdit && editorLineNumber in vscode-augment.nextEdit.linesWithGutterIconActions && resourcePath in vscode-augment.nextEdit.filesWithGutterIconActions",
+          "group": "navigation@0"
+        }
+      ],
+      "terminal/context": [
+        {
+          "command": "vscode-augment.addTerminalOutputToChat",
+          "group": "navigation",
+          "when": "terminalTextSelected"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "vscode-augment.addTerminalOutputToChat",
+          "when": "terminalTextSelected"
+        },
+        {
+          "command": "vscode-augment.internal-dv.o",
+          "when": "vscode-augment.enableDebugFeatures"
+        },
+        {
+          "command": "vscode-augment.insertCompletion",
+          "when": "!editorReadonly"
+        },
+        {
+          "command": "vscode-augment.toggleAutomaticCompletionSetting"
+        },
+        {
+          "command": "vscode-augment.signIn",
+          "when": "vscode-augment.useOAuth && !vscode-augment.isLoggedIn"
+        },
+        {
+          "command": "vscode-augment.signOut",
+          "when": "vscode-augment.useOAuth && vscode-augment.isLoggedIn"
+        },
+        {
+          "command": "vscode-augment.internal-dv.i",
+          "when": "(vscode-augment.internal-new-instructions.enabled || vscode-augment.enableDebugFeatures) && !editorReadonly && !terminalFocus"
+        },
+        {
+          "command": "vscode-augment.chat.slash.fix"
+        },
+        {
+          "command": "vscode-augment.startNewChat"
+        },
+        {
+          "command": "vscode-augment.focusAugmentPanel",
+          "when": "vscode-augment.enableDebugFeatures || vscode-augment.isLoggedIn"
+        },
+        {
+          "command": "_vscode-augment.showSidebarChat",
+          "when": "false"
+        },
+        {
+          "command": "_vscode-augment.showSidebarWorkspaceContext",
+          "when": "false"
+        },
+        {
+          "command": "vscode-augment.clear-recent-editing-history",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.generateCommitMessage",
+          "when": "false"
+        },
+        {
+          "command": "vscode-augment.showSettingsPanel"
+        },
+        {
+          "command": "vscode-augment.showRemoteAgentsPanel",
+          "when": "vscode-augment.featureFlags.enableRemoteAgents"
+        },
+        {
+          "command": "vscode-augment.openSshConfig",
+          "when": "vscode-augment.featureFlags.enableRemoteAgents"
+        },
+        {
+          "command": "vscode-augment.next-edit.open-panel",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel"
+        },
+        {
+          "command": "vscode-augment.next-edit.force",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.accept",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.accept-all",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canAcceptAll"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.reject",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.reject-all",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canRejectAll"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.dismiss",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.next",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.next-forward",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.previous",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.toggle-bg",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.toggle-all-highlights",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "_vscode-augment.next-edit.background.accept-code-action",
+          "when": "false"
+        },
+        {
+          "command": "vscode-augment.next-edit.toggle-panel-horizontal-split",
+          "when": "view == augment-next-edit"
+        },
+        {
+          "command": "vscode-augment.next-edit.update",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "_vscode-augment.next-edit.update.loading",
+          "when": "false"
+        },
+        {
+          "command": "_vscode-augment.next-edit.update.disabled-no-changes",
+          "when": "false"
+        },
+        {
+          "command": "_vscode-augment.next-edit.update.disabled-cached",
+          "when": "false"
+        },
+        {
+          "command": "vscode-augment.next-edit.learn-more",
+          "when": "view == augment-next-edit"
+        },
+        {
+          "command": "_vscode-augment.next-edit.background.open",
+          "when": "false"
+        },
+        {
+          "command": "_vscode-augment.next-edit.background.next-forward.disabled",
+          "when": "false"
+        },
+        {
+          "command": "_vscode-augment.next-edit.background.previous.disabled",
+          "when": "false"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "vscode-augment.generateCommitMessage",
+          "args": [
+            "${resourceUri}"
+          ],
+          "group": "navigation",
+          "when": "vscode-augment.enableGenerateCommitMessage && gitOpenRepositoryCount != 0"
+        }
+      ],
+      "editor/title": [
+        {
+          "submenu": "vscode-augment.next-edit.editor-action-submenu",
+          "group": "navigation@43",
+          "when": "vscode-augment.enableNextEdit && !terminalEditorActive && vscode-augment.nextEdit.canNext && !vscode-augment.nextEdit.loading"
+        },
+        {
+          "submenu": "vscode-augment.next-edit.editor-action-submenu.disabled",
+          "group": "navigation@43",
+          "when": "vscode-augment.enableNextEdit && !terminalEditorActive && !vscode-augment.nextEdit.canNext && !vscode-augment.nextEdit.loading"
+        },
+        {
+          "submenu": "vscode-augment.next-edit.editor-action-submenu.loading",
+          "group": "navigation@43",
+          "when": "vscode-augment.enableNextEdit && !terminalEditorActive && vscode-augment.nextEdit.loading"
+        }
+      ],
+      "vscode-augment.next-edit.panel-submenu": [
+        {
+          "command": "vscode-augment.next-edit.background.accept-all",
+          "when": "vscode-augment.nextEdit.canAcceptAll",
+          "title": "Accept All",
+          "group": "2_more@1"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.reject-all",
+          "when": "vscode-augment.nextEdit.canRejectAll",
+          "title": "Reject All",
+          "group": "2_more@2"
+        },
+        {
+          "command": "vscode-augment.next-edit.learn-more",
+          "title": "Learn about Next Edit...",
+          "group": "2_more@3"
+        },
+        {
+          "command": "vscode-augment.next-edit.settings",
+          "title": "Next Edit Settings...",
+          "group": "2_more@4"
+        }
+      ],
+      "vscode-augment.next-edit.editor-action-submenu": [
+        {
+          "command": "vscode-augment.next-edit.background.previous",
+          "title": "Go to Previous Suggestion",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canPrevious && (editorTextFocus || editorHoverFocused || augment-next-edit.active)",
+          "group": "2_augment@1"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.next-forward",
+          "title": "Go to Next Suggestion",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canNext && (editorTextFocus || editorHoverFocused || augment-next-edit.active)",
+          "group": "2_augment@2"
+        },
+        {
+          "command": "vscode-augment.next-edit.open-panel",
+          "title": "Open Panel",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel",
+          "group": "2_augment@3"
+        },
+        {
+          "command": "vscode-augment.next-edit.force",
+          "group": "2_augment@4",
+          "when": "vscode-augment.enableNextEdit && (editorTextFocus || editorHoverFocused || augment-next-edit.active)"
+        },
+        {
+          "command": "vscode-augment.next-edit.enable-bg",
+          "title": "Enable Background Suggestions",
+          "when": "vscode-augment.enableNextEdit && !vscode-augment.enableNextEditBackgroundSuggestions",
+          "group": "2_augment@5"
+        },
+        {
+          "command": "vscode-augment.next-edit.disable-bg",
+          "title": "Disable Background Suggestions",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.enableNextEditBackgroundSuggestions",
+          "group": "2_augment@5"
+        },
+        {
+          "command": "vscode-augment.next-edit.settings",
+          "title": "Next Edit Settings...",
+          "group": "2_augment@6",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.learn-more",
+          "title": "Learn about Next Edit...",
+          "group": "2_augment@7",
+          "when": "vscode-augment.enableNextEdit"
+        }
+      ],
+      "vscode-augment.next-edit.editor-action-submenu.disabled": [
+        {
+          "command": "vscode-augment.next-edit.background.previous",
+          "title": "Go to Previous Suggestion",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canPrevious && (editorTextFocus || editorHoverFocused || augment-next-edit.active)",
+          "group": "2_augment@1"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.next-forward",
+          "title": "Go to Next Suggestion",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canNext && (editorTextFocus || editorHoverFocused || augment-next-edit.active)",
+          "group": "2_augment@2"
+        },
+        {
+          "command": "vscode-augment.next-edit.open-panel",
+          "title": "Open Panel",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel",
+          "group": "2_augment@3"
+        },
+        {
+          "command": "vscode-augment.next-edit.force",
+          "group": "2_augment@4",
+          "when": "vscode-augment.enableNextEdit && (editorTextFocus || editorHoverFocused || augment-next-edit.active)"
+        },
+        {
+          "command": "vscode-augment.next-edit.enable-bg",
+          "title": "Enable Background Suggestions",
+          "when": "vscode-augment.enableNextEdit && !vscode-augment.enableNextEditBackgroundSuggestions",
+          "group": "2_augment@5"
+        },
+        {
+          "command": "vscode-augment.next-edit.disable-bg",
+          "title": "Disable Background Suggestions",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.enableNextEditBackgroundSuggestions",
+          "group": "2_augment@5"
+        },
+        {
+          "command": "vscode-augment.next-edit.settings",
+          "title": "Next Edit Settings...",
+          "group": "2_augment@6",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.learn-more",
+          "title": "Learn about Next Edit...",
+          "group": "2_augment@7",
+          "when": "vscode-augment.enableNextEdit"
+        }
+      ],
+      "vscode-augment.next-edit.editor-action-submenu.loading": [
+        {
+          "command": "vscode-augment.next-edit.background.previous",
+          "title": "Go to Previous Suggestion",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canPrevious && (editorTextFocus || editorHoverFocused || augment-next-edit.active)",
+          "group": "2_augment@1"
+        },
+        {
+          "command": "vscode-augment.next-edit.background.next-forward",
+          "title": "Go to Next Suggestion",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.canNext && (editorTextFocus || editorHoverFocused || augment-next-edit.active)",
+          "group": "2_augment@2"
+        },
+        {
+          "command": "vscode-augment.next-edit.open-panel",
+          "title": "Open Panel",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel",
+          "group": "2_augment@3"
+        },
+        {
+          "command": "vscode-augment.next-edit.force",
+          "group": "2_augment@4",
+          "when": "vscode-augment.enableNextEdit && (editorTextFocus || editorHoverFocused || augment-next-edit.active)"
+        },
+        {
+          "command": "vscode-augment.next-edit.enable-bg",
+          "title": "Enable Background Suggestions",
+          "when": "vscode-augment.enableNextEdit && !vscode-augment.enableNextEditBackgroundSuggestions",
+          "group": "2_augment@5"
+        },
+        {
+          "command": "vscode-augment.next-edit.disable-bg",
+          "title": "Disable Background Suggestions",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.enableNextEditBackgroundSuggestions",
+          "group": "2_augment@5"
+        },
+        {
+          "command": "vscode-augment.next-edit.settings",
+          "title": "Next Edit Settings...",
+          "group": "2_augment@6",
+          "when": "vscode-augment.enableNextEdit"
+        },
+        {
+          "command": "vscode-augment.next-edit.learn-more",
+          "title": "Learn about Next Edit...",
+          "group": "2_augment@7",
+          "when": "vscode-augment.enableNextEdit"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "icon": "media/activitybar.svg",
+          "id": "augment-chat",
+          "title": "Augment"
+        }
+      ],
+      "panel": [
+        {
+          "icon": "media/activitybar.svg",
+          "id": "augment-panel",
+          "title": "Augment Next Edit"
+        }
+      ]
+    },
+    "views": {
+      "augment-chat": [
+        {
+          "id": "augment-chat",
+          "name": "Augment",
+          "type": "webview"
+        }
+      ],
+      "augment-panel": [
+        {
+          "id": "augment-next-edit",
+          "name": "Augment Next Edit",
+          "type": "webview",
+          "when": "vscode-augment.enableNextEdit && vscode-augment.nextEdit.enablePanel"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "pnpm run vscode:build-dev && pnpm run common-webviews:build",
+    "build:prod": "pnpm run vscode:esbuild-prod && pnpm run common-webviews:build",
+    "lint": "pnpm run vscode:lint",
+    "lint:fix": "pnpm run vscode:lint:fix",
+    "test": "pnpm run vscode:test && pnpm run test:e2e",
+    "test:fix": "pnpm run lint:fix && pnpm run test",
+    "test:debug": "LOG_LEVEL=verbose pnpm run test",
+    "test:e2e": "wdio run ./wdio.conf.ts",
+    "watch": "concurrently 'npm:*:watch'",
+    "package-extension": "STABLE_VSCODE_RELEASE_VERSION=$(head -n1 version)-$(git rev-parse --abbrev-ref HEAD | tr '/_' '-').$(git log --format='%ct.%h' -n1) bazel build //clients/vscode:package-extension-prerelease --config=local_output --compilation_mode=opt --stamp && cp ../../bazel-bin/clients/vscode/vscode-augment-prerelease.vsix .",
+    "package-extension-nightly": "STABLE_VSCODE_RELEASE_VERSION=$(head -n1 version)-$(git rev-parse --abbrev-ref HEAD | tr '/_' '-').$(git log --format='%ct.%h' -n1) bazel build //clients/vscode:package-extension-nightly --config=local_output --compilation_mode=opt --stamp && cp ../../bazel-bin/clients/vscode/vscode-augment-nightly.vsix .",
+    "marketplace-data": "vsce show --json Augment.vscode-augment",
+    "nightly-marketplace-data": "vsce show --json Augment.vscode-augment-nightly",
+    "embed-version-info": "./embed-version-info.py",
+    "vsce-package": "vsce package --no-dependencies --allow-star-activation --skip-license --out=\"${EXTENSION_FILENAME:-out/vscode-augment.vsix}\"",
+    "package-for-release": "[ \"$RELEASE_CHANNEL\" = \"prerelease\" ] && pnpm run vsce-package -- --pre-release || pnpm run vsce-package",
+    "vscode:build-dev": "pnpm run vscode:esbuild-sourcemaps",
+    "vscode:watch": "npm run vscode:esbuild-base -- --watch --sourcemap",
+    "vscode:esbuild-prod": "npm run vscode:esbuild-base -- --minify",
+    "vscode:esbuild-sourcemaps": "npm run vscode:esbuild-base -- --sourcemap",
+    "vscode:esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --external:triple-beam --format=cjs --platform=node",
+    "vscode:extension:dev:hmr": "pnpm run -r dev:vite-hmr-vscode",
+    "vscode:extension:dev:watch": ". ./.augment-hmr-env && pnpm exec ibazel run //clients/vscode:build_dev_to_workspace_hmr --config='local_output' --compilation_mode=dbg --action_env=AUGMENT_HMR=${AUGMENT_HMR} --action_env=AUGMENT_JS_ENV=${AUGMENT_JS_ENV}",
+    "vscode:extension:dev:watch-no-hmr": "AUGMENT_JS_ENV=development pnpm exec ibazel run //clients/vscode:build_dev_to_workspace --config='local_output' --compilation_mode=dbg --action_env=AUGMENT_JS_ENV=development",
+    "vscode:hmr:write:port": "node scripts/generate-augment-hmr-env.js",
+    "vscode:generate:proto-typestubs": "bazel run //tools/generate_proto_typestubs:generate_ts_proto_typestubs",
+    "vscode:lint": "pnpm run vscode:eslint && pnpm run vscode:prettier",
+    "vscode:lint:fix": "pnpm run vscode:eslint:fix && pnpm run vscode:prettier:fix",
+    "vscode:eslint": "git ls-files -- . | xargs pre-commit run eslint --files",
+    "vscode:eslint:fix": "git ls-files -- . | xargs pre-commit run eslint --hook-stage=manual --files",
+    "vscode:jest": "jest --config ./jest.config.js",
+    "vscode:prettier": "git ls-files -- . | xargs pre-commit run prettier --hook-stage=manual --files",
+    "vscode:prettier:fix": "git ls-files -- . | xargs pre-commit run prettier --files",
+    "vscode:test": "pnpm run build:prod && pnpm run vscode:lint && pnpm run vscode:jest",
+    "common-webviews:build": "cd ../common/webviews && pnpm run build:vscode",
+    "contributes-gen": "tsx scripts/contributes/cli.ts"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@jest/globals": "^29.7.0",
+    "@types/diff": "^7.0.1",
+    "@types/express": "^4.17.21",
+    "@types/glob": "^7.2.0",
+    "@types/jest": "^29.5.11",
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^22.9.0",
+    "@types/node-forge": "^1.3.11",
+    "@types/semver": "^7.5.8",
+    "@types/triple-beam": "^1.3.5",
+    "@types/uuid": "^9.0.8",
+    "@types/vscode": "^1.82.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vscode/test-electron": "^2.3.9",
+    "@wdio/cli": "^9.20.0",
+    "@wdio/globals": "^9.17.0",
+    "@wdio/local-runner": "^9.20.0",
+    "@wdio/mocha-framework": "^9.20.0",
+    "@wdio/spec-reporter": "^9.20.0",
+    "@wdio/types": "^9.20.0",
+    "babel-jest": "^29.7.0",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.25.8",
+    "eslint": "^8.57.0",
+    "eslint-plugin-jest": "^27.6.3",
+    "eslint-plugin-mocha": "^10.5.0",
+    "eslint-plugin-unused-imports": "^3.2.0",
+    "fetch-mock": "^9.11.0",
+    "fetch-mock-jest": "^1.5.1",
+    "glob": "^8.1.0",
+    "isomorphic-fetch": "^3.0.0",
+    "jest": "^29.7.0",
+    "jest-cli": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "jest-mock-vscode": "^3.0.4",
+    "node-fetch": "^2.7.0",
+    "nodemon": "^3.0.3",
+    "prebuildify-ci": "^1.0.5",
+    "replace-in-file": "^6.3.5",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "wdio-vscode-service": "^6.1.4"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.2",
+    "@anthropic-ai/vertex-sdk": "^0.4.1",
+    "@bufbuild/protobuf": "2.6.2",
+    "@connectrpc/connect": "2.0.2",
+    "@connectrpc/connect-express": "^2.0.2",
+    "@connectrpc/connect-node": "^2.0.2",
+    "@sentry/node": "^10.27.0",
+    "@types/archiver": "^6.0.3",
+    "@vscode/vsce": "2.29.0",
+    "archiver": "^7.0.1",
+    "date-fns": "^4.1.0",
+    "denque": "^2.1.0",
+    "diff": "^7.0.0",
+    "encoding": "^0.1.13",
+    "exponential-backoff": "^3.1.2",
+    "express": "^4.21.2",
+    "fuse.js": "^7.0.0",
+    "highlight.js": "^11.9.0",
+    "ignore": "^5.3.0",
+    "jest-junit": "^16.0.0",
+    "json5": "^2.2.3",
+    "level": "^10.0.0",
+    "lodash-es": "^4.17.21",
+    "lru-cache": "^11.0.0",
+    "mac-ca": "^3.1.0",
+    "monaco-editor": "^0.52.2",
+    "node-diff3": "^3.1.2",
+    "p-limit": "^3.1.0",
+    "prosemirror-model": "^1.23.0",
+    "semver": "^7.6.3",
+    "shlex": "^2.1.2",
+    "simple-git": "^3.27.0",
+    "triple-beam": "^1.4.1",
+    "typescript-eslint": "7.12.0",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "winston-transport": "^4.6.0",
+    "zod": "^3.25.76"
+  },
+  "peerDependencies": {
+    "supports-color": "^10.2.2"
+  }
+}
