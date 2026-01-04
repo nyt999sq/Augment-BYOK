@@ -5,6 +5,25 @@ const { spawn } = require("child_process");
 const { Readable } = require("stream");
 const crypto = require("crypto");
 const { URL } = require("url");
+const fs = require("fs");
+const path = require("path");
+
+// Debug file logging for thinking mode verification
+const DEBUG_LOG_PATH = path.join(require("os").homedir(), "augment-byok-debug.log");
+function debugFileLog(label, data) {
+  try {
+    const timestamp = new Date().toISOString();
+    const safeData = JSON.stringify(data, (key, value) => {
+      if (key.toLowerCase().includes("key") || key.toLowerCase().includes("token") || key.toLowerCase() === "authorization") {
+        return typeof value === "string" && value.length > 8 ? value.slice(0, 4) + "****" + value.slice(-4) : "****";
+      }
+      return value;
+    }, 2);
+    fs.appendFileSync(DEBUG_LOG_PATH, `[${timestamp}] ${label}:\n${safeData}\n\n`);
+  } catch (e) {
+    console.error("[augment-byok] debugFileLog error:", e);
+  }
+}
 
 const DEFAULT_MAX_BODY_BYTES = 50 * 1024 * 1024;
 
@@ -525,11 +544,33 @@ async function* iterateSseEvents(reader) {
   }
 }
 
-async function openAiChatCompletions({ baseUrl, apiKey, body, signal }) {
+async function openAiChatCompletions({ baseUrl, apiKey, body, signal, extraHeaders, extraArgs }) {
   const url = openAiChatCompletionsUrl(baseUrl);
   const headers = { "content-type": "application/json" };
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-  return await fetch(url, { method: "POST", headers, body: JSON.stringify(body), signal });
+  // Merge extraHeaders (e.g., anthropic-beta for thinking)
+  if (extraHeaders && typeof extraHeaders === "object") {
+    for (const [k, v] of Object.entries(extraHeaders)) {
+      if (typeof v === "string") headers[k] = v;
+    }
+  }
+  // Merge extraArgs into body (e.g., thinking parameter)
+  const finalBody = extraArgs && typeof extraArgs === "object" ? { ...body, ...extraArgs } : body;
+  
+  // Debug logging for thinking mode verification
+  debugFileLog("openAiChatCompletions REQUEST", {
+    url,
+    headers,
+    extraHeaders,
+    extraArgs,
+    bodyKeys: Object.keys(finalBody),
+    hasThinking: !!finalBody.thinking,
+    thinkingConfig: finalBody.thinking,
+    hasAnthropicBeta: !!headers["anthropic-beta"],
+    anthropicBeta: headers["anthropic-beta"],
+  });
+  
+  return await fetch(url, { method: "POST", headers, body: JSON.stringify(finalBody), signal });
 }
 
 function getThirdPartyOverride(payload) {
@@ -555,6 +596,8 @@ function defaultUpstreamConfig() {
       "If user provides images, incorporate relevant visual information into your reasoning.",
       "Reply concisely and correctly.",
     ].join("\n"),
+    extraHeaders: {},
+    extraArgs: {},
   };
 }
 
@@ -569,7 +612,9 @@ function normalizeUpstreamConfig(upstream, payload) {
   const temperature = typeof base.temperature === "number" ? base.temperature : fallback.temperature;
   const maxTokens = Number.isFinite(base.maxTokens) && base.maxTokens > 0 ? base.maxTokens : undefined;
   const systemPromptBase = trimOrEmpty(base.systemPromptBase) || fallback.systemPromptBase;
-  return { baseUrl, apiKey, model, temperature, maxTokens, systemPromptBase };
+  const extraHeaders = base.extraHeaders && typeof base.extraHeaders === "object" ? base.extraHeaders : fallback.extraHeaders;
+  const extraArgs = base.extraArgs && typeof base.extraArgs === "object" ? base.extraArgs : fallback.extraArgs;
+  return { baseUrl, apiKey, model, temperature, maxTokens, systemPromptBase, extraHeaders, extraArgs };
 }
 
 function requireApiKeyIfOpenAi(upstream) {
@@ -657,6 +702,27 @@ async function handleChatStream(req, res, payload, upstream, logger) {
   const systemPrompt = buildSystemPrompt(payload, upstream.systemPromptBase);
   const messages = toOpenAIMessagesFromAugment({ systemPrompt, payload });
   const tools = toOpenAITools(payload?.tool_definitions);
+  
+  // Check if this is a tool result continuation - if so, disable thinking to avoid Claude API error
+  // IMPORTANT: Only check current request nodes, NOT entire chat_history
+  // Otherwise thinking gets disabled for ALL subsequent messages after any tool call
+  const hasToolResultsInCurrentRequest = getToolResultNodes(payload?.nodes).length > 0;
+  const shouldDisableThinking = hasToolResultsInCurrentRequest && upstream.extraArgs?.thinking;
+  
+  // Create modified extraArgs without thinking if needed
+  const effectiveExtraArgs = shouldDisableThinking 
+    ? Object.fromEntries(Object.entries(upstream.extraArgs || {}).filter(([k]) => k !== 'thinking'))
+    : upstream.extraArgs;
+  const effectiveExtraHeaders = shouldDisableThinking
+    ? Object.fromEntries(Object.entries(upstream.extraHeaders || {}).filter(([k]) => k !== 'anthropic-beta'))
+    : upstream.extraHeaders;
+  
+  debugFileLog("handleChatStream THINKING CHECK", {
+    hasToolResultsInCurrentRequest,
+    shouldDisableThinking,
+    originalThinking: !!upstream.extraArgs?.thinking,
+    effectiveThinking: !!effectiveExtraArgs?.thinking,
+  });
 
   const abortController = new AbortController();
   const onAbort = () => abortController.abort();
@@ -676,6 +742,8 @@ async function handleChatStream(req, res, payload, upstream, logger) {
         ...(Number.isFinite(upstream.maxTokens) && upstream.maxTokens > 0 ? { max_tokens: upstream.maxTokens } : {}),
       },
       signal: abortController.signal,
+      extraHeaders: effectiveExtraHeaders,
+      extraArgs: effectiveExtraArgs,
     });
 
     const upstreamText = upstreamResp.ok ? "" : await upstreamResp.text().catch(() => "");
@@ -686,14 +754,38 @@ async function handleChatStream(req, res, payload, upstream, logger) {
     let stopReason = 1;
     const toolCallsByIndex = new Map();
     let legacyFunctionCall = { name: "", arguments: "" };
+    let thinkingContent = ""; // Collect thinking/reasoning content
 
+    let sseEventCount = 0;
     for await (const evt of iterateSseEvents(reader)) {
       const data = evt.data;
       if (!data) continue;
       if (data === "[DONE]") break;
       const parsed = safeJsonParse(data, undefined);
       if (!parsed) continue;
+      
+      // Debug: log first 5 SSE events to understand response format
+      if (sseEventCount < 5) {
+        debugFileLog(`SSE EVENT #${sseEventCount}`, {
+          raw: data.slice(0, 500),
+          parsedKeys: Object.keys(parsed),
+          choices: parsed?.choices?.map(c => ({
+            deltaKeys: c?.delta ? Object.keys(c.delta) : [],
+            deltaContent: c?.delta?.content,
+            deltaReasoningContent: c?.delta?.reasoning_content,
+            deltaThinking: c?.delta?.thinking,
+          })),
+        });
+        sseEventCount++;
+      }
+      
       const choice = Array.isArray(parsed?.choices) ? parsed.choices[0] : undefined;
+
+      // Handle thinking/reasoning content - collect for THINKING node
+      const reasoningContent = choice?.delta?.reasoning_content;
+      if (typeof reasoningContent === "string" && reasoningContent) {
+        thinkingContent += reasoningContent;
+      }
 
       const deltaText = choice?.delta?.content;
       if (typeof deltaText === "string" && deltaText) writeNdjson(res, { text: deltaText });
@@ -728,8 +820,31 @@ async function handleChatStream(req, res, payload, upstream, logger) {
     const toolIndex = indexToolDefinitions(payload?.tool_definitions);
     const ctxText = trimOrEmpty(payload?.message) || getTextFromNodes(payload?.nodes);
     const repairedToolCalls = toolCalls.map((c) => ({ ...c, arguments: repairToolCallArguments({ toolName: c.name, rawArguments: c.arguments, toolInfo: toolIndex.get(c.name), contextText: ctxText }) }));
-    const nodes = repairedToolCalls.length > 0 ? toAugmentToolUseNodes(repairedToolCalls) : [];
-    writeNdjson(res, nodes.length > 0 ? { text: "", nodes, stop_reason: 3 } : { text: "", stop_reason: stopReason });
+    const toolNodes = repairedToolCalls.length > 0 ? toAugmentToolUseNodes(repairedToolCalls) : [];
+    
+    // Build structured_output_nodes with THINKING node (type: 8) if we have thinking content
+    const structuredOutputNodes = [];
+    if (thinkingContent.trim()) {
+      structuredOutputNodes.push({
+        type: 8, // THINKING type
+        thinking: { summary: thinkingContent.trim() }
+      });
+    }
+    
+    // Combine tool nodes and thinking nodes
+    const allNodes = [...structuredOutputNodes, ...toolNodes];
+    
+    // Debug: log final output
+    debugFileLog("FINAL OUTPUT", {
+      hasThinkingContent: thinkingContent.length > 0,
+      thinkingContentLength: thinkingContent.length,
+      thinkingContentPreview: thinkingContent.slice(0, 200),
+      structuredOutputNodesCount: structuredOutputNodes.length,
+      allNodesCount: allNodes.length,
+      toolNodesCount: toolNodes.length,
+    });
+    
+    writeNdjson(res, allNodes.length > 0 ? { text: "", nodes: allNodes, structured_output_nodes: structuredOutputNodes, stop_reason: toolNodes.length > 0 ? 3 : stopReason } : { text: "", stop_reason: stopReason });
     res.end();
   } catch (err) {
     logger.error("chat-stream failed:", err);
@@ -759,6 +874,8 @@ async function handleChat(req, res, payload, upstream, logger) {
         ...(tools.length > 0 ? { tools, tool_choice: "auto" } : {}),
         ...(Number.isFinite(upstream.maxTokens) && upstream.maxTokens > 0 ? { max_tokens: upstream.maxTokens } : {}),
       },
+      extraHeaders: upstream.extraHeaders,
+      extraArgs: upstream.extraArgs,
     });
 
     const raw = await upstreamResp.text();
@@ -798,6 +915,8 @@ async function handlePromptLikeStream(res, payload, upstream, { system, user }, 
         ],
         ...(Number.isFinite(upstream.maxTokens) && upstream.maxTokens > 0 ? { max_tokens: upstream.maxTokens } : {}),
       },
+      extraHeaders: upstream.extraHeaders,
+      extraArgs: upstream.extraArgs,
     });
 
     const upstreamText = upstreamResp.ok ? "" : await upstreamResp.text().catch(() => "");
@@ -916,6 +1035,8 @@ async function handleCompletion(res, payload, upstream, logger) {
         ],
         ...(Number.isFinite(upstream.maxTokens) && upstream.maxTokens > 0 ? { max_tokens: upstream.maxTokens } : {}),
       },
+      extraHeaders: upstream.extraHeaders,
+      extraArgs: upstream.extraArgs,
     });
 
     const raw = await upstreamResp.text();
@@ -966,6 +1087,8 @@ async function handleEdit(res, payload, upstream, logger) {
         ],
         ...(Number.isFinite(upstream.maxTokens) && upstream.maxTokens > 0 ? { max_tokens: upstream.maxTokens } : {}),
       },
+      extraHeaders: upstream.extraHeaders,
+      extraArgs: upstream.extraArgs,
     });
     const raw = await upstreamResp.text();
     if (!upstreamResp.ok) return jsonOk(res, { text: selected });
@@ -1068,6 +1191,8 @@ async function handleAgentsEditFile(res, payload, upstream, logger) {
         ],
         ...(Number.isFinite(upstream.maxTokens) && upstream.maxTokens > 0 ? { max_tokens: upstream.maxTokens } : {}),
       },
+      extraHeaders: upstream.extraHeaders,
+      extraArgs: upstream.extraArgs,
     });
     const raw = await upstreamResp.text();
     if (!upstreamResp.ok) return jsonOk(res, { modified_file_contents: original, is_error: true, error_message: `Upstream HTTP ${upstreamResp.status}` });

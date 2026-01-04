@@ -2,7 +2,25 @@
 
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const { defaultUpstreamConfig, normalizeOpenAiV1BaseUrl, startByokServer } = require("./byok-server");
+
+// Debug file logging for thinking mode verification
+const DEBUG_LOG_PATH = path.join(os.homedir(), "augment-byok-debug.log");
+function debugFileLog(label, data) {
+  try {
+    const timestamp = new Date().toISOString();
+    const safeData = JSON.stringify(data, (key, value) => {
+      if (key.toLowerCase().includes("key") || key.toLowerCase().includes("token") || key.toLowerCase() === "authorization") {
+        return typeof value === "string" && value.length > 8 ? value.slice(0, 4) + "****" + value.slice(-4) : "****";
+      }
+      return value;
+    }, 2);
+    fs.appendFileSync(DEBUG_LOG_PATH, `[${timestamp}] ${label}:\n${safeData}\n\n`);
+  } catch (e) {
+    console.error("[augment-byok] debugFileLog error:", e);
+  }
+}
 
 const AUGMENT_BYOK = {
   overlayGlobalKey: "__AUGMENT_BYOK_OVERLAY",
@@ -76,6 +94,15 @@ async function ensureInitialized({ vscode, context }) {
   upstream.baseUrl = normalizeOpenAiV1BaseUrl(upstream.baseUrl) || defaults.baseUrl;
   if (!String(upstream.systemPromptBase || "").trim()) upstream.systemPromptBase = defaults.systemPromptBase;
   globalThis[AUGMENT_BYOK.upstreamGlobalKey] = upstream;
+
+  // Debug logging for thinking mode verification
+  debugFileLog("ensureInitialized CONFIG LOADED", {
+    savedConfig: saved,
+    extraHeaders: upstream.extraHeaders,
+    extraArgs: upstream.extraArgs,
+    hasThinkingHeader: upstream.extraHeaders && upstream.extraHeaders["anthropic-beta"],
+    hasThinkingArg: upstream.extraArgs && upstream.extraArgs.thinking,
+  });
 
   try {
     upstream.apiKey = (await context.secrets.get(AUGMENT_BYOK.apiKeySecretKey)) || "";
@@ -158,6 +185,8 @@ function registerByokPanelCommandOnce({ vscode, context }) {
             apiKeySet,
             augmentBaseUrl: upstream.augmentBaseUrl || "",
             augmentTokenSet,
+            extraHeaders: upstream.extraHeaders || {},
+            extraArgs: upstream.extraArgs || {},
           },
         });
       };
@@ -184,8 +213,18 @@ function registerByokPanelCommandOnce({ vscode, context }) {
             const augmentBaseUrl = typeof cfg.augmentBaseUrl === "string" ? cfg.augmentBaseUrl.trim() : "";
             const augmentToken = typeof cfg.augmentToken === "string" ? cfg.augmentToken : undefined;
             const clearAugmentToken = Boolean(cfg.clearAugmentToken);
+            const extraHeaders = cfg.extraHeaders && typeof cfg.extraHeaders === "object" ? cfg.extraHeaders : {};
+            const extraArgs = cfg.extraArgs && typeof cfg.extraArgs === "object" ? cfg.extraArgs : {};
 
-            await context.globalState.update(AUGMENT_BYOK.stateStorageKey, { baseUrl, model, temperature, maxTokens, systemPromptBase, augmentBaseUrl });
+            // Debug logging for thinking mode verification
+            debugFileLog("CONFIG SAVE from panel", {
+              extraHeaders,
+              extraArgs,
+              hasThinkingHeader: !!extraHeaders["anthropic-beta"],
+              hasThinkingArg: !!extraArgs.thinking,
+            });
+
+            await context.globalState.update(AUGMENT_BYOK.stateStorageKey, { baseUrl, model, temperature, maxTokens, systemPromptBase, augmentBaseUrl, extraHeaders, extraArgs });
             if (clearApiKey) await context.secrets.delete(AUGMENT_BYOK.apiKeySecretKey);
             else if (typeof apiKey === "string" && apiKey.trim()) await context.secrets.store(AUGMENT_BYOK.apiKeySecretKey, apiKey.trim());
             if (clearAugmentToken) await context.secrets.delete(AUGMENT_BYOK.augmentTokenSecretKey);
@@ -203,6 +242,8 @@ function registerByokPanelCommandOnce({ vscode, context }) {
             upstream.augmentBaseUrl = augmentBaseUrl;
             if (clearAugmentToken) upstream.augmentToken = "";
             else if (typeof augmentToken === "string" && augmentToken.trim()) upstream.augmentToken = augmentToken.trim();
+            upstream.extraHeaders = extraHeaders;
+            upstream.extraArgs = extraArgs;
 
             panel.webview.postMessage({ type: "byok.saved", ok: true });
             await postConfig();

@@ -237,6 +237,21 @@
         <div>
           <input id="maxTokens" type="number" step="1" min="1" placeholder="留空表示不强制" />
 	        </div>
+
+        <label for="enableClaudeThinking">Claude Thinking</label>
+        <div>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 0;">
+            <input id="enableClaudeThinking" type="checkbox" style="width: auto;" />
+            <span>启用 Claude Thinking（自动注入 anthropic-beta 头和 thinking 参数）</span>
+          </label>
+          <div class="hint">勾选后会自动添加 thinking 相关配置，无需手动填写下方 JSON。</div>
+        </div>
+
+        <label for="thinkingBudget">Thinking Token 预算</label>
+        <div>
+          <input id="thinkingBudget" type="number" step="1000" min="1000" placeholder="30000" />
+          <div class="hint">Claude thinking 的 token 预算，默认 30000。</div>
+        </div>
 	      </div>
 	    </div>
 	
@@ -249,6 +264,22 @@
 	        </div>
 	      </div>
 	    </div>
+
+    <div class="card">
+      <div class="grid">
+        <label for="extraHeaders">额外请求头 (JSON)</label>
+        <div>
+          <textarea id="extraHeaders" placeholder='{"anthropic-beta": "interleaved-thinking-2025-05-14"}'></textarea>
+          <div class="hint">JSON 格式的额外 HTTP 请求头，用于启用特殊功能（如 Anthropic thinking）。</div>
+        </div>
+
+        <label for="extraArgs">额外请求参数 (JSON)</label>
+        <div>
+          <textarea id="extraArgs" placeholder='{"thinking": {"type": "enabled", "budget_tokens": 30000}}'></textarea>
+          <div class="hint">JSON 格式的额外请求体参数，会合并到 API 请求中（如 thinking 参数）。</div>
+        </div>
+      </div>
+    </div>
 
     <div class="card">
       <div class="grid">
@@ -290,6 +321,10 @@
     const augmentBaseUrlEl = el("augmentBaseUrl");
     const augmentTokenEl = el("augmentToken");
     const augmentTokenStateEl = el("augmentTokenState");
+    const extraHeadersEl = el("extraHeaders");
+    const extraArgsEl = el("extraArgs");
+    const enableClaudeThinkingEl = el("enableClaudeThinking");
+    const thinkingBudgetEl = el("thinkingBudget");
 	    const statusEl = el("status");
 
     function setStatus(text, kind) {
@@ -317,6 +352,33 @@
       const apiKey = String(apiKeyEl.value || "");
       const augmentBaseUrl = String(augmentBaseUrlEl.value || "").trim();
       const augmentToken = String(augmentTokenEl.value || "");
+      
+      // Parse extraHeaders and extraArgs as JSON
+      let extraHeaders = {};
+      let extraArgs = {};
+      try {
+        const extraHeadersRaw = String(extraHeadersEl.value || "").trim();
+        if (extraHeadersRaw) extraHeaders = JSON.parse(extraHeadersRaw);
+      } catch (e) {
+        setStatus("extraHeaders JSON 格式错误: " + e.message, "error");
+        return;
+      }
+      try {
+        const extraArgsRaw = String(extraArgsEl.value || "").trim();
+        if (extraArgsRaw) extraArgs = JSON.parse(extraArgsRaw);
+      } catch (e) {
+        setStatus("extraArgs JSON 格式错误: " + e.message, "error");
+        return;
+      }
+      
+      // Handle Claude Thinking toggle
+      const enableClaudeThinking = enableClaudeThinkingEl.checked;
+      const thinkingBudget = readNumber(thinkingBudgetEl.value) || 30000;
+      if (enableClaudeThinking) {
+        extraHeaders["anthropic-beta"] = "interleaved-thinking-2025-05-14";
+        extraArgs["thinking"] = { type: "enabled", budget_tokens: thinkingBudget };
+      }
+      
       const payload = {
         baseUrl,
         model,
@@ -326,6 +388,8 @@
         clearApiKey: Boolean(clearApiKey),
         augmentBaseUrl,
         clearAugmentToken: Boolean(clearAugmentToken),
+        extraHeaders,
+        extraArgs,
       };
       if (!clearApiKey && apiKey.trim()) payload.apiKey = apiKey;
       if (!clearAugmentToken && augmentToken.trim()) payload.augmentToken = augmentToken;
@@ -350,6 +414,21 @@
         augmentBaseUrlEl.value = c.augmentBaseUrl || "";
         augmentTokenEl.value = "";
         augmentTokenStateEl.textContent = "Token 状态：" + (c.augmentTokenSet ? "已保存（不会回显）" : "未保存");
+        
+        // Detect Claude Thinking from saved config
+        const hasThinkingHeader = c.extraHeaders && c.extraHeaders["anthropic-beta"] === "interleaved-thinking-2025-05-14";
+        const hasThinkingArg = c.extraArgs && c.extraArgs.thinking && c.extraArgs.thinking.type === "enabled";
+        enableClaudeThinkingEl.checked = hasThinkingHeader && hasThinkingArg;
+        thinkingBudgetEl.value = (c.extraArgs && c.extraArgs.thinking && c.extraArgs.thinking.budget_tokens) || "";
+        
+        // Show extraHeaders/extraArgs without the Claude Thinking parts (for advanced users)
+        const displayHeaders = { ...c.extraHeaders };
+        const displayArgs = { ...c.extraArgs };
+        if (hasThinkingHeader) delete displayHeaders["anthropic-beta"];
+        if (hasThinkingArg) delete displayArgs["thinking"];
+        extraHeadersEl.value = Object.keys(displayHeaders).length > 0 ? JSON.stringify(displayHeaders, null, 2) : "";
+        extraArgsEl.value = Object.keys(displayArgs).length > 0 ? JSON.stringify(displayArgs, null, 2) : "";
+        
         setStatus("配置已加载", c.apiKeySet ? "ok" : "warn");
         return;
       }
